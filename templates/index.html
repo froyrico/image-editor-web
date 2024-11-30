@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Imágenes en Línea</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome para Iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Tailwind Output -->
+    <link href="{{ url_for('static', filename='css/tailwind_output.css') }}" rel="stylesheet">
+    <style>
+        /* Fuente principal */
+        body {
+            font-family: 'Roboto', sans-serif;
+        }
+
+        /* Spinner CSS */
+        .spinner {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            display: none; /* Inicialmente oculto */
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Imagen de Vista Previa */
+        #preview-image {
+            max-width: 100%;
+            height: auto;
+            margin-top: 20px;
+            display: none; /* Oculta la imagen por defecto */
+        }
+
+        /* Modo oscuro */
+        .dark-mode {
+            background-color: #121212 !important;
+            color: #ffffff !important;
+        }
+
+        .dark-mode .bg-white {
+            background-color: #333333 !important;
+            color: #ffffff !important;
+        }
+
+        .dark-mode .hero-section {
+            background: linear-gradient(to bottom, #333333, #121212) !important;
+            color: #ffffff !important;
+        }
+
+        .dark-mode .btn-primary {
+            background-color: #bb86fc;
+            border-color: #bb86fc;
+        }
+
+        .dark-mode .btn-secondary {
+            background-color: #03dac6;
+            border-color: #03dac6;
+            color: #121212;
+        }
+
+        .dark-mode .form-control {
+            background-color: #333333;
+            color: #ffffff;
+            border: 1px solid #555555;
+        }
+
+        /* Estilos de Botón Redondeado */
+        .btn-custom {
+            border-radius: 30px;
+            padding: 10px 20px;
+        }
+
+        /* Estilos del Hero Section */
+        .hero-section {
+            text-align: center;
+            padding: 50px 20px;
+            background: linear-gradient(to bottom, #ffffff, #f1f1f1);
+            border-bottom: 2px solid #eaeaea;
+        }
+
+        .hero-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .hero-description {
+            font-size: 1.25rem;
+            margin-bottom: 30px;
+        }
+
+        .hero-btn {
+            font-size: 1.25rem;
+            padding: 15px 25px;
+        }
+    </style>
+</head>
+
+<body class="bg-light text-dark flex flex-column min-vh-100">
+    <!-- Header Hero Section -->
+    <section class="hero-section">
+        <h1 class="hero-title text-primary">Editor de Imágenes en Línea</h1>
+        <p class="hero-description text-secondary">
+            Sube tus imágenes y aplica filtros espectaculares con solo un clic. Haz tu foto única y personalizada en segundos.
+        </p>
+        <button id="scroll-to-upload" class="btn btn-primary hero-btn btn-custom"><i class="fas fa-arrow-down"></i> Comenzar Ahora</button>
+    </section>
+
+    <!-- Formulario de Subida de Imágenes -->
+    <div id="upload-section" class="bg-white p-4 rounded shadow-sm container-sm mt-5">
+        <div class="d-flex justify-content-end mb-3">
+            <button id="toggle-theme" class="btn btn-secondary btn-custom"><i class="fas fa-adjust"></i> Modo Oscuro</button>
+        </div>
+        <form id="upload-form" action="/upload" method="POST" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="image" class="form-label fw-bold">Subir Imagen:</label>
+                <input type="file" id="image" name="image" accept="image/*" required class="form-control" placeholder="Selecciona una imagen">
+            </div>
+            <div class="mb-4">
+                <label class="form-label fw-bold">Seleccionar Filtros:</label>
+                <div class="form-check">
+                    <input type="checkbox" id="grayscale" name="filters" value="grayscale" class="form-check-input" onclick="applyPreviewFilters()">
+                    <label class="form-check-label" for="grayscale"><i class="fas fa-adjust"></i> Escala de Grises</label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" id="sepia" name="filters" value="sepia" class="form-check-input" onclick="applyPreviewFilters()">
+                    <label class="form-check-label" for="sepia"><i class="fas fa-tint"></i> Sepia</label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" id="invert" name="filters" value="invert" class="form-check-input" onclick="applyPreviewFilters()">
+                    <label class="form-check-label" for="invert"><i class="fas fa-exchange-alt"></i> Invertir Colores</label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" id="blur" name="filters" value="blur" class="form-check-input" onclick="applyPreviewFilters()">
+                    <label class="form-check-label" for="blur"><i class="fas fa-eye-slash"></i> Desenfoque</label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" id="contrast" name="filters" value="contrast" class="form-check-input" onclick="applyPreviewFilters()">
+                    <label class="form-check-label" for="contrast"><i class="fas fa-adjust"></i> Aumentar Contraste</label>
+                </div>
+            </div>
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary w-100 btn-custom"><i class="fas fa-play"></i> Aplicar Filtros</button>
+            </div>
+        </form>
+        <div class="text-center mt-4">
+            <img id="preview-image" alt="Vista Previa de la Imagen">
+        </div>
+        <div class="text-center mt-4">
+            <div id="spinner" class="spinner"></div>
+            <p id="loading-text" class="text-primary mt-2" style="display: none;">Procesando la imagen, por favor espera...</p>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- JavaScript -->
+        <!-- JavaScript -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                // Mostrar el spinner al enviar el formulario
+                document.getElementById('upload-form').addEventListener('submit', function() {
+                    document.getElementById('spinner').style.display = 'block';
+                    document.getElementById('loading-text').style.display = 'block';
+                });
+    
+                // Previsualizar la imagen al subir un archivo
+                document.getElementById('image').addEventListener('change', function(event) {
+                    const file = event.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const previewImage = document.getElementById('preview-image');
+                            previewImage.src = e.target.result;
+                            previewImage.style.display = 'block';
+                            applyPreviewFilters(); // Aplicar filtros si hay seleccionados
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+    
+                // Aplicar filtros seleccionados a la imagen de previsualización
+                function applyPreviewFilters() {
+                    const previewImage = document.getElementById('preview-image');
+                    let filters = '';
+    
+                    if (document.getElementById('grayscale').checked) {
+                        filters += 'grayscale(100%) ';
+                    }
+                    if (document.getElementById('sepia').checked) {
+                        filters += 'sepia(100%) ';
+                    }
+                    if (document.getElementById('invert').checked) {
+                        filters += 'invert(100%) ';
+                    }
+                    if (document.getElementById('blur').checked) {
+                        filters += 'blur(3px) ';
+                    }
+                    if (document.getElementById('contrast').checked) {
+                        filters += 'contrast(150%) ';
+                    }
+    
+                    previewImage.style.filter = filters.trim();
+                }
+    
+                // Alternar tema oscuro/claro
+                document.getElementById('toggle-theme').addEventListener('click', function() {
+                    const body = document.body;
+                    const button = document.getElementById('toggle-theme');
+    
+                    // Alternar las clases para el modo oscuro/claro
+                    body.classList.toggle('dark-mode');
+    
+                    // Cambiar el texto y la clase del botón según el estado del modo
+                    if (body.classList.contains('dark-mode')) {
+                        button.innerHTML = '<i class="fas fa-sun"></i> Modo Claro';
+                        button.classList.remove('btn-secondary');
+                        button.classList.add('btn-light');
+                    } else {
+                        button.innerHTML = '<i class="fas fa-moon"></i> Modo Oscuro';
+                        button.classList.remove('btn-light');
+                        button.classList.add('btn-secondary');
+                    }
+                });
+    
+                // Scroll suave para "Comenzar Ahora"
+                document.getElementById('scroll-to-upload').addEventListener('click', function() {
+                    document.getElementById('upload-section').scrollIntoView({ behavior: 'smooth' });
+                });
+            });
+        </script>
+    
+</body>
+</html>
